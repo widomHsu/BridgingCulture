@@ -10,7 +10,7 @@ import javax.annotation.Resource;
 
 @Component
 @Slf4j
-public class HttpClient {
+public class HttpUtil {
     @Resource
     OkHttpClient client;
     @Resource

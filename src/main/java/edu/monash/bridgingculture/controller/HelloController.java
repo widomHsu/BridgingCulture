@@ -17,6 +17,12 @@ public class HelloController {
         return "redirect:/index.html";
     }
 
+    @RequestMapping("/abdel")
+    @ResponseBody
+    public ResponseDO helloAbdel(){
+        return ResponseDO.success("عاشت فلسطين حره");
+    }
+
     @RequestMapping("/test")
     @ResponseBody
     public ResponseDO test(){
