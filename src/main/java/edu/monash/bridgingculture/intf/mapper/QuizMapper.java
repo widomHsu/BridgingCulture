@@ -1,11 +1,9 @@
 package edu.monash.bridgingculture.intf.mapper;
 
-import edu.monash.bridgingculture.service.entity.Census;
-import edu.monash.bridgingculture.service.entity.Question;
+import edu.monash.bridgingculture.service.entity.quiz.Census;
+import edu.monash.bridgingculture.service.entity.quiz.Question;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
-
-import java.util.List;
 
 @Mapper
 public interface QuizMapper {

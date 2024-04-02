@@ -1,8 +1,7 @@
 package edu.monash.bridgingculture.intf;
 
-
 import edu.monash.bridgingculture.service.entity.ResponseDO;
 
-public interface GameService {
-    ResponseDO getItems();
+public interface ResourceService {
+    ResponseDO getResource(String country);
 }

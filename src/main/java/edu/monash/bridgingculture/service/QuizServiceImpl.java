@@ -2,10 +2,12 @@ package edu.monash.bridgingculture.service;
 
 import edu.monash.bridgingculture.intf.QuizService;
 import edu.monash.bridgingculture.intf.mapper.QuizMapper;
-import edu.monash.bridgingculture.service.entity.Census;
-import edu.monash.bridgingculture.service.entity.Question;
+import edu.monash.bridgingculture.service.entity.quiz.Census;
+import edu.monash.bridgingculture.service.entity.quiz.Question;
 import edu.monash.bridgingculture.service.entity.ResponseDO;
-import edu.monash.bridgingculture.service.entity.TagsOfCountry;
+import edu.monash.bridgingculture.service.entity.quiz.Tag;
+import edu.monash.bridgingculture.service.entity.quiz.TripAdvisor;
+import edu.monash.bridgingculture.service.utils.HttpUtil;
 import edu.monash.bridgingculture.service.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,11 +24,14 @@ public class QuizServiceImpl implements QuizService {
     QuizMapper quizMapper;
     @Resource
     RandomUtil randomUtil;
+    @Resource
+    HttpUtil httpUtil;
 
     @Override
     public ResponseDO getQuiz() {
         // todo
         List<Question> questionList = null; // from database, the size must greater than 10
+
         return ResponseDO.success(randomUtil.getRandomElement(questionList, 5, 10, 0.5));
     }
 
@@ -34,13 +39,13 @@ public class QuizServiceImpl implements QuizService {
     public ResponseDO submitQuiz(List<String> options) {
         // 1. get the possible favourite country
         Set<String> set = new HashSet<>(options);
-        List<TagsOfCountry> tagsOfCountries = null;
-        Map<String, Integer> map = new HashMap<>();
-        for(TagsOfCountry tagsOfCountry: tagsOfCountries){
-            String country = tagsOfCountry.getCountry();
-            String[] tags = tagsOfCountry.getTags().split("&");
-            for(String tag: tags){
-                if(set.contains(tag)){
+        List<Tag> tagList = null; // todo
+        Map<String, Integer> map = new HashMap<>(); // <country, marks>
+        for(Tag tag: tagList){
+            String country = tag.getCountry();
+            String[] tags = tag.getTags().split("&");
+            for(String s: tags){
+                if(set.contains(s)){
                     map.put(country, map.getOrDefault(country, 0) + 1);
                 }
             }
@@ -58,8 +63,8 @@ public class QuizServiceImpl implements QuizService {
         log.info(suburb);
 
         // 3. find attractions about that culture in that suburb
-        // todo
-        return null;
+        TripAdvisor tripAdvisor = httpUtil.getTripAdvisor(suburb, preferCountry);
+        return ResponseDO.success(tripAdvisor);
     }
 
     public static String countryToEthnic(String country){
@@ -71,6 +76,4 @@ public class QuizServiceImpl implements QuizService {
         map.put("philippines", "filipino");
         return map.get(country);
     }
-
-
 }

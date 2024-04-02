@@ -14,11 +14,11 @@ public class QuizController {
     @Resource
     QuizService quizService;
 
-    @GetMapping("/getQuiz")
+    @GetMapping("/")
     public ResponseDO getQuiz(){
         return quizService.getQuiz();
     }
-    @PostMapping("/submitQuiz")
+    @PostMapping("/")
     public ResponseDO submitQuiz(@RequestBody List<String> options){
         quizService.submitQuiz(options);
         return null;

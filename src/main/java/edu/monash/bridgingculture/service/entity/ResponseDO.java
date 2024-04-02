@@ -2,8 +2,10 @@ package edu.monash.bridgingculture.service.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
+@ToString
 public class ResponseDO {
 
     @Schema(description = "Whether an error occurred in the request")

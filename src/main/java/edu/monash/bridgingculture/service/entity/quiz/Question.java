@@ -1,4 +1,4 @@
-package edu.monash.bridgingculture.service.entity;
+package edu.monash.bridgingculture.service.entity.quiz;
 
 import lombok.Data;
 

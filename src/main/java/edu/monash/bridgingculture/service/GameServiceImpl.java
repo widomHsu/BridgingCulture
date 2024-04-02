@@ -2,8 +2,8 @@ package edu.monash.bridgingculture.service;
 
 import edu.monash.bridgingculture.intf.GameService;
 import edu.monash.bridgingculture.intf.mapper.GameMapper;
-import edu.monash.bridgingculture.service.entity.Item;
-import edu.monash.bridgingculture.service.entity.ItemDO;
+import edu.monash.bridgingculture.service.entity.game.Item;
+import edu.monash.bridgingculture.service.entity.game.ItemDO;
 import edu.monash.bridgingculture.service.entity.ResponseDO;
 import edu.monash.bridgingculture.service.utils.RandomUtil;
 import org.springframework.stereotype.Service;
@@ -30,12 +30,6 @@ public class GameServiceImpl implements GameService {
             list.add(dealItems(item));
         }
         return ResponseDO.success(list);
-    }
-
-    @Override
-    public ResponseDO getResource() {
-
-        return null;
     }
 
     public static ItemDO dealItems(Item item){
