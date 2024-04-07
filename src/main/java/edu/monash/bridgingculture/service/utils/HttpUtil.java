@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.List;
 
+/**
+ * This class provides utility methods for making HTTP requests.
+ */
 @Component
 @Slf4j
 public class HttpUtil {
@@ -23,6 +26,13 @@ public class HttpUtil {
     @Resource
     Environment env;
 
+    /**
+     * Retrieves information from TripAdvisor based on suburb and country.
+     *
+     * @param suburb String representing the suburb
+     * @param country String representing the country
+     * @return TripAdvisor object containing information from TripAdvisor API
+     */
     public TripAdvisor getTripAdvisor(String suburb, String country){
         // 1. get geolocation
         String url = "https://api.mapbox.com/geocoding/v5/mapbox.places/"
@@ -43,6 +53,14 @@ public class HttpUtil {
         return getRequest(url, TripAdvisor.class);
     }
 
+    /**
+     * Makes a GET request and retrieves response as an object of specified class.
+     *
+     * @param url String representing the URL to make the GET request
+     * @param clazz Class representing the expected response type
+     * @param <T> Type of the expected response object
+     * @return Response object of specified class
+     */
     public <T> T getRequest(String url, Class<T> clazz){
         Request request = new Request.Builder()
                 .url(url)

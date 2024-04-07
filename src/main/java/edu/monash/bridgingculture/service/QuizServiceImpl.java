@@ -2,11 +2,7 @@ package edu.monash.bridgingculture.service;
 
 import edu.monash.bridgingculture.intf.QuizService;
 import edu.monash.bridgingculture.intf.mapper.QuizMapper;
-import edu.monash.bridgingculture.service.entity.quiz.Census;
-import edu.monash.bridgingculture.service.entity.quiz.Question;
-import edu.monash.bridgingculture.service.entity.ResponseDO;
-import edu.monash.bridgingculture.service.entity.quiz.Tag;
-import edu.monash.bridgingculture.service.entity.quiz.TripAdvisor;
+import edu.monash.bridgingculture.service.entity.quiz.*;
 import edu.monash.bridgingculture.service.utils.HttpUtil;
 import edu.monash.bridgingculture.service.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +12,9 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the QuizService interface providing quiz-related functionality.
+ */
 @Service
 @Slf4j
 public class QuizServiceImpl implements QuizService {
@@ -27,19 +26,28 @@ public class QuizServiceImpl implements QuizService {
     @Resource
     HttpUtil httpUtil;
 
+    /**
+     * Retrieves a list of randomized quiz questions.
+     *
+     * @return List of Question representing the randomized quiz questions
+     */
     @Override
-    public ResponseDO getQuiz() {
-        // todo
-        List<Question> questionList = null; // from database, the size must greater than 10
-
-        return ResponseDO.success(randomUtil.getRandomElement(questionList, 5, 10, 0.5));
+    public List<Question> getQuiz() {
+        List<Question> questionList = quizMapper.getQuestionnaire();
+        return randomUtil.getRandomElement(questionList, 4, 6, 0.25);
     }
 
+    /**
+     * Submits a quiz with provided options and retrieves information about the culture and attractions.
+     *
+     * @param options List of strings representing options chosen for the quiz
+     * @return TripAdvisorDO containing information about the culture and attractions
+     */
     @Override
-    public ResponseDO submitQuiz(List<String> options) {
+    public TripAdvisorDO submitQuiz(List<String> options) {
         // 1. get the possible favourite country
         Set<String> set = new HashSet<>(options);
-        List<Tag> tagList = null; // todo
+        List<Tag> tagList = quizMapper.getTags();
         Map<String, Integer> map = new HashMap<>(); // <country, marks>
         for(Tag tag: tagList){
             String country = tag.getCountry();
@@ -50,30 +58,20 @@ public class QuizServiceImpl implements QuizService {
                 }
             }
         }
+        log.info(map.entrySet().toString());
         List<Map.Entry<String, Integer>> sortedList = map.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toList());
 
-        String preferCountry = sortedList.get(sortedList.size()-1).getKey();
-
+        String ethnic = sortedList.get(sortedList.size()-1).getKey();
         // 2. find the suburb with the most people of that background living there
-        String ethnic = countryToEthnic(preferCountry);
         Census census = quizMapper.getCensusByEthnic(ethnic);
+        census.setEthnic(Character.toUpperCase(census.getEthnic().charAt(0)) + census.getEthnic().substring(1));
         String suburb = census.getSuburb();
         log.info(suburb);
 
         // 3. find attractions about that culture in that suburb
-        TripAdvisor tripAdvisor = httpUtil.getTripAdvisor(suburb, preferCountry);
-        return ResponseDO.success(tripAdvisor);
-    }
-
-    public static String countryToEthnic(String country){
-        HashMap<String, String> map = new HashMap<>();
-        map.put("china", "chinese");
-        map.put("india", "indian");
-        map.put("england", "english");
-        map.put("new zealand", "new zealander");
-        map.put("philippines", "filipino");
-        return map.get(country);
+        TripAdvisor tripAdvisor = httpUtil.getTripAdvisor(suburb, ethnic);
+        return new TripAdvisorDO(census, tripAdvisor);
     }
 }

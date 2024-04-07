@@ -1,17 +1,11 @@
 package edu.monash.bridgingculture.service.entity.quiz;
 
 import lombok.Data;
+import lombok.ToString;
 
 @Data
+@ToString
 public class Census {
-    /**
-     * CREATE TABLE top5_suburbs_VIC (
-     *   country VARCHAR2(50) NOT NULL,
-     *   suburb VARCHAR2(50) NOT NULL,
-     *   population NUMBER,
-     *   percentage NUMBER
-     * );
-     */
 
     private String ethnic;
     private String suburb;

@@ -1,6 +1,5 @@
 package edu.monash.bridgingculture.service.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
@@ -8,11 +7,8 @@ import lombok.ToString;
 @ToString
 public class ResponseDO {
 
-    @Schema(description = "Whether an error occurred in the request")
     private boolean success;
-    @Schema(description = "Response message")
     private String msg;
-    @Schema(description = "Response data")
     private Object data;
 
     public ResponseDO() {

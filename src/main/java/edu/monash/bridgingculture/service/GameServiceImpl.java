@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Implementation of the GameService interface providing game-related functionality.
+ */
 @Service
 public class GameServiceImpl implements GameService {
 
@@ -21,17 +24,28 @@ public class GameServiceImpl implements GameService {
     @Resource
     RandomUtil randomUtil;
 
+    /**
+     * Retrieves a list of randomized game items.
+     *
+     * @return List of ItemDO representing the randomized game items
+     */
     @Override
-    public ResponseDO getItems() {
+    public List<ItemDO> getItems() {
         List<Item> items = gameMapper.getItems();
         List<Item> randomItems = randomUtil.getRandomElement(items, 5, 10, 0.3);
-        ArrayList<ItemDO> list = new ArrayList<>();
+        List<ItemDO> list = new ArrayList<>();
         for(Item item: randomItems){
             list.add(dealItems(item));
         }
-        return ResponseDO.success(list);
+        return list;
     }
 
+    /**
+     * Transforms an Item object into an ItemDO object.
+     *
+     * @param item Item object to be transformed
+     * @return Transformed ItemDO object
+     */
     public static ItemDO dealItems(Item item){
         ItemDO itemDO = new ItemDO();
 
