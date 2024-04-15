@@ -6,7 +6,7 @@ import edu.monash.bridgingculture.service.entity.ResponseDO;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**

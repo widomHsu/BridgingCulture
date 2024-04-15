@@ -17,7 +17,7 @@ public class HelloController {
      *
      * @return String representing the redirect path
      */
-    @GetMapping("/")
+    @GetMapping("/hello")
     @Log
     public String hello(){
         return "redirect:/index.html";

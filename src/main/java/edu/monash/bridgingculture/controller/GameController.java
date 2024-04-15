@@ -5,7 +5,7 @@ import edu.monash.bridgingculture.intf.GameService;
 import edu.monash.bridgingculture.service.entity.ResponseDO;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 /**
  * This class represents a controller for managing game-related operations.
  */
