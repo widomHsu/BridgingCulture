@@ -2,13 +2,13 @@ package edu.monash.bridgingculture.service;
 
 import edu.monash.bridgingculture.controller.utils.ReminderUtils;
 import edu.monash.bridgingculture.intf.FestivalService;
+import edu.monash.bridgingculture.intf.mapper.FestivalMapper;
 import edu.monash.bridgingculture.service.entity.ResponseDO;
 import edu.monash.bridgingculture.service.entity.festival.Festival;
 import edu.monash.bridgingculture.service.entity.festival.Reminder;
 import edu.monash.bridgingculture.service.utils.HttpUtil;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.Resource;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,15 +25,13 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.*;
 
 @Service
 @Slf4j
@@ -49,19 +47,19 @@ public class FestivalServiceImpl implements FestivalService {
     JavaMailSender mailSender;
     @Resource
     ReminderUtils reminderUtils;
+    @Resource
+    FestivalMapper festivalMapper;
     static final String CHARSET = "UTF-8";
     ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> trafficMap = new ConcurrentHashMap<>();
     ConcurrentHashMap<String, Festival> festivalMap = new ConcurrentHashMap<>();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    DateTimeFormatter formatterWithSec = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+    ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     @Override
     public int isAllowed(String userIP) {
         ConcurrentLinkedDeque<Long> timestamps = trafficMap.computeIfAbsent(userIP, k -> new ConcurrentLinkedDeque<>());
         long current = System.currentTimeMillis();
-
         cleanOldTimestamps(timestamps, current);
-
         if (timestamps.size() < 5) {
             timestamps.addLast(current);
             return 0;
@@ -108,14 +106,12 @@ public class FestivalServiceImpl implements FestivalService {
     }
 
     @Override
-    public List<Festival> getFestival(String country, int year, int month, @Nullable String type) {
-        List<Festival> festivals = httpUtil.getFestivalByCountry(country, year, type);
-        festivals.sort(Comparator.comparing(Festival::getDate));
-        if(month != 0)
+    public List<Festival> getFestivals(List<String> countries, int year, int month, @Nullable List<String> types) {
+        List<Festival> festivals = festivalMapper.getFestival(countries, year);
+        if(month != -1)
             fitterByMonth(festivals, month);
-        for(Festival festival: festivals)
-            festivalMap.putIfAbsent(festival.getName(), festival);
-
+        if(types != null)
+            fitterByType(festivals, types);
         return festivals;
     }
 
@@ -125,7 +121,7 @@ public class FestivalServiceImpl implements FestivalService {
         LocalDate localDate = LocalDate.parse(festival.getDate(), formatter);
         LocalDateTime festivalDate = localDate.atStartOfDay();
 
-        int number = 0;
+        int number;
         try{
             number = Integer.parseInt(reminderRequest.getAheadNumber());
         }catch (Exception e){
@@ -149,6 +145,26 @@ public class FestivalServiceImpl implements FestivalService {
         return ResponseDO.success("Set an reminder.");
     }
 
+    @Override
+    public ResponseDO addFestivals(List<String> countries, int year) {
+        CountDownLatch countDownLatch = new CountDownLatch(countries.size());
+        for(String country: countries){
+            executorService.submit(() -> {
+                List<Festival> festivals = httpUtil.getFestivalByCountry(country, year, null);
+                festivals.sort(Comparator.comparing(Festival::getDate));
+                for(Festival festival: festivals)
+                    festivalMapper.addFestival(festival);
+                countDownLatch.countDown();
+            });
+        }
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return ResponseDO.success("");
+    }
+
     public void fitterByMonth(List<Festival> festivals, int month){
         Iterator<Festival> iterator = festivals.iterator();
         while(iterator.hasNext()){
@@ -157,6 +173,11 @@ public class FestivalServiceImpl implements FestivalService {
             if(date.getMonthValue() != month)
                 iterator.remove();
         }
+    }
+
+    public void fitterByType(List<Festival> festivals, List<String> types){
+        Set<String> set = new HashSet<>(types);
+        festivals.removeIf(festival -> !set.contains(festival.getType()));
     }
 
     private void setCookie(String content,long time, HttpServletResponse response){

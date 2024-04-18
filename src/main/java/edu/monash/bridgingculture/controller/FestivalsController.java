@@ -7,10 +7,10 @@ import edu.monash.bridgingculture.service.entity.ResponseDO;
 import edu.monash.bridgingculture.service.entity.festival.ChatBot;
 import edu.monash.bridgingculture.service.entity.festival.Festival;
 import edu.monash.bridgingculture.service.entity.festival.Reminder;
-import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,29 +39,59 @@ public class FestivalsController {
         return ResponseDO.success(festivalService.chatBot(request, response, chatBot.getQuery()));
     }
 
-    @GetMapping("")
+    @PostMapping("")
     @Log
-    public ResponseDO getFestival(@RequestParam("country") String country,
-                                  @RequestParam("year") String year,
-                                  @Nullable @RequestParam("month") String month,
-                                  @Nullable @RequestParam("type") String type){
-        if(StringUtils.isEmpty(country))
+    public ResponseDO getFestival(@RequestBody Festival.FestivalDO festivalDO) throws InterruptedException {
+        if(CollectionUtils.isEmpty(festivalDO.getCountries()))
             return ResponseDO.fail("The country is null.");
-        if(StringUtils.isEmpty(year))
+        if(StringUtils.isEmpty(festivalDO.getYear()))
             return ResponseDO.fail("The year is null.");
-        List<Festival> festival =
-                festivalService.getFestival(country,
-                        Integer.parseInt(year),
-                        month==null? 0:Integer.parseInt(month),
-                        type);
-        return ResponseDO.success(festival);
+
+        int year = getNumber(festivalDO.getYear());
+        if(year == -1)
+            return ResponseDO.fail("Invalid year.");
+        if(year < 2024 || year > 2030)
+            return ResponseDO.fail("The year range from 2024 to 2030 inclusive.");
+
+        int month = -1;
+        if(festivalDO.getMonth() != null){
+            month = getNumber(festivalDO.getMonth());
+            if(month == -1)
+                return ResponseDO.fail("Invalid month.");
+            if(month < 1 || month > 12)
+                return ResponseDO.fail("The month range from 1 to 12 inclusive.");
+        }
+
+        return ResponseDO.success(
+                festivalService.getFestivals(festivalDO.getCountries(),
+                year,
+                month,
+                festivalDO.getTypes())
+        );
     }
 
-    @PostMapping("")
+    @PostMapping("/reminder")
     @Log
     public ResponseDO createReminder(@RequestBody Reminder.RequestDO reminderRequest) throws Exception {
         if(!reminderUtils.checkEmail(reminderRequest.getEmail()))
             return ResponseDO.fail("Invalid Email.");
         return festivalService.createReminder(reminderRequest);
+    }
+
+    @PostMapping("/addFestivals")
+    @Log
+    public ResponseDO addFestivals(@RequestParam("country") List<String> countries,
+                                   @RequestParam("year") String year){
+        return festivalService.addFestivals(countries, Integer.parseInt(year));
+    }
+
+    public static int getNumber(String str){
+        if(str == null)
+            return -1;
+        try{
+            return Integer.parseInt(str);
+        }catch (Exception e){
+            return -1;
+        }
     }
 }
