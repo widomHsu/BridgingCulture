@@ -44,14 +44,11 @@ public class FestivalsController {
     public ResponseDO getFestival(@RequestBody Festival.FestivalDO festivalDO) throws InterruptedException {
         if(CollectionUtils.isEmpty(festivalDO.getCountries()))
             return ResponseDO.fail("The country is null.");
-        if(StringUtils.isEmpty(festivalDO.getYear()))
-            return ResponseDO.fail("The year is null.");
 
-        int year = getNumber(festivalDO.getYear());
-        if(year == -1)
-            return ResponseDO.fail("Invalid year.");
-        if(year < 2024 || year > 2030)
-            return ResponseDO.fail("The year range from 2024 to 2030 inclusive.");
+        ResponseDO responseDO = checkYear(festivalDO.getYear());
+        if(!responseDO.isSuccess())
+            return responseDO;
+        int year = (int) responseDO.getData();
 
         int month = -1;
         if(festivalDO.getMonth() != null){
@@ -72,7 +69,7 @@ public class FestivalsController {
 
     @PostMapping("/reminder")
     @Log
-    public ResponseDO createReminder(@RequestBody Reminder.RequestDO reminderRequest) throws Exception {
+    public ResponseDO createReminder(@RequestBody Reminder.RequestDO reminderRequest) {
         if(!reminderUtils.checkEmail(reminderRequest.getEmail()))
             return ResponseDO.fail("Invalid Email.");
         return festivalService.createReminder(reminderRequest);
@@ -83,6 +80,18 @@ public class FestivalsController {
     public ResponseDO addFestivals(@RequestParam("country") List<String> countries,
                                    @RequestParam("year") String year){
         return festivalService.addFestivals(countries, Integer.parseInt(year));
+    }
+
+    public static ResponseDO checkYear(String yearStr){
+        if(StringUtils.isEmpty(yearStr))
+            return ResponseDO.fail("The year is null.");
+
+        int year = getNumber(yearStr);
+        if(year == -1)
+            return ResponseDO.fail("Invalid year.");
+        if(year < 2024 || year > 2030)
+            return ResponseDO.fail("The year range from 2024 to 2030 inclusive.");
+        return ResponseDO.success(year);
     }
 
     public static int getNumber(String str){

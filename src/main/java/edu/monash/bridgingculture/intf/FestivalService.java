@@ -18,7 +18,7 @@ public interface FestivalService {
 
     List<Festival> getFestivals(List<String> countries, int year, int month, @Nullable List<String> type) throws InterruptedException;
 
-    ResponseDO createReminder(Reminder.RequestDO reminderRequest) throws Exception;
+    ResponseDO createReminder(Reminder.RequestDO reminderRequest);
 
     ResponseDO addFestivals(List<String> countries, int year);
 }

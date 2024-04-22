@@ -25,4 +25,7 @@ public interface FestivalMapper {
             "</script>"
     )
     List<Festival> getFestival(@Param("countries") List<String> countries, int year);
+    
+    @Select("select * from festival_api where id = #{id};")
+    Festival getFestivalById(int id);
 }

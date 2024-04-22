@@ -51,9 +51,9 @@ public class FestivalServiceImpl implements FestivalService {
     FestivalMapper festivalMapper;
     static final String CHARSET = "UTF-8";
     ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> trafficMap = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String, Festival> festivalMap = new ConcurrentHashMap<>();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    ExecutorService executorService = Executors.newFixedThreadPool(4);
+    DateTimeFormatter formatterWithTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     @Override
     public int isAllowed(String userIP) {
@@ -116,33 +116,38 @@ public class FestivalServiceImpl implements FestivalService {
     }
 
     @Override
-    public ResponseDO createReminder(Reminder.RequestDO reminderRequest) throws Exception {
-        Festival festival = festivalMap.get(reminderRequest.getFestivalName());
-        LocalDate localDate = LocalDate.parse(festival.getDate(), formatter);
-        LocalDateTime festivalDate = localDate.atStartOfDay();
+    public ResponseDO createReminder(Reminder.RequestDO reminderRequest) {
+        Festival festival = festivalMapper.getFestivalById(reminderRequest.getId());
+        if(festival == null)
+            return ResponseDO.fail("Invalid festival.");
 
-        int number;
+        int number; // Ahead Number
         try{
             number = Integer.parseInt(reminderRequest.getAheadNumber());
         }catch (Exception e){
-            return ResponseDO.fail("Invalid number");
+            return ResponseDO.fail("Invalid ahead number.");
         }
         int aheadHours = number * reminderRequest.getUnitType().getAheadHours();
+        LocalDate localDate = LocalDate.parse(festival.getDate(), formatter);
+        LocalDateTime festivalDate = localDate.atStartOfDay();
         LocalDateTime reminderTime = festivalDate.minus(aheadHours, ChronoUnit.HOURS);
 
-        String htmlContent = reminderUtils.buildHTMLContent(reminderRequest.getFestivalName(),
-                festival.getDate(), festival.getCountry() + festival.getDate());
+        executorService.submit(() -> {
+            String htmlContent = reminderUtils.buildHTMLContent(festival, reminderRequest);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            reminderUtils.fillMessage(
+                    mimeMessage,
+                    env.getProperty("spring.mail.username"),
+                    reminderRequest,
+                    festival,
+                    htmlContent,
+                    reminderTime);
 
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        reminderUtils.fillMessage(mimeMessage,
-                env.getProperty("spring.mail.username"),
-                reminderRequest.getEmail(),
-                htmlContent,
-                reminderTime);
+            mailSender.send(mimeMessage);
+            log.info("Send an email to " + reminderRequest.getEmail() + " at " + reminderTime.format(formatterWithTime));
+        });
 
-        mailSender.send(mimeMessage);
-        log.info("Send an email to " + reminderRequest.getEmail());
-        return ResponseDO.success("Set an reminder.");
+        return ResponseDO.success("We will send an email to you at " + reminderTime.format(formatterWithTime) + ".");
     }
 
     @Override

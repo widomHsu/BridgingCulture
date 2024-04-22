@@ -10,6 +10,7 @@ import java.util.List;
 @ToString
 public class Festival{
 
+    private Integer id;
     private String country;
     private String iso;
     private Integer year;
