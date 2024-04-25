@@ -20,5 +20,5 @@ public interface FestivalService {
 
     ResponseDO createReminder(Reminder.RequestDO reminderRequest);
 
-    ResponseDO addFestivals(List<String> countries, int year);
+    ResponseDO addFestivals(List<String> countries, int year, int month);
 }

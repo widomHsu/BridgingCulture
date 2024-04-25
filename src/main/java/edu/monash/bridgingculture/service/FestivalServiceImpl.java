@@ -55,6 +55,13 @@ public class FestivalServiceImpl implements FestivalService {
     DateTimeFormatter formatterWithTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     ExecutorService executorService = Executors.newFixedThreadPool(2);
 
+    /**
+     * Checks whether the user with the provided IP address is allowed to make a request.
+     *
+     * @param userIP The IP address of the user.
+     * @return An integer representing the number of seconds the user needs to wait before making another request,
+     *         or 0 if the user is allowed to make a request.
+     */
     @Override
     public int isAllowed(String userIP) {
         ConcurrentLinkedDeque<Long> timestamps = trafficMap.computeIfAbsent(userIP, k -> new ConcurrentLinkedDeque<>());
@@ -70,6 +77,14 @@ public class FestivalServiceImpl implements FestivalService {
         }
     }
 
+    /**
+     * Handles the chatbot interaction.
+     *
+     * @param request  The HttpServletRequest object representing the incoming request.
+     * @param response The HttpServletResponse object representing the outgoing response.
+     * @param query    The user's query.
+     * @return The response from the chatbot.
+     */
     @Override
     public String chatBot(HttpServletRequest request, HttpServletResponse response, String query) {
         Cookie[] cookies = request.getCookies();
@@ -100,11 +115,20 @@ public class FestivalServiceImpl implements FestivalService {
             removeCookie(cookies[1], response);
         }
         long currentTime = System.currentTimeMillis();
-        setCookie(query, currentTime, response);
-        setCookie(res,currentTime + 1, response);
+        setCookie(query, currentTime, response, request);
+        setCookie(res,currentTime + 1, response, request);
         return res;
     }
 
+    /**
+     * Retrieves festivals based on the provided criteria.
+     *
+     * @param countries The list of countries for which festivals are to be retrieved.
+     * @param year      The year for which festivals are to be retrieved.
+     * @param month     The month for which festivals are to be retrieved. Pass -1 if all months are required.
+     * @param types     The types of festivals to filter by. Pass null if no filtering by types is needed.
+     * @return A list of Festival objects representing the retrieved festivals.
+     */
     @Override
     public List<Festival> getFestivals(List<String> countries, int year, int month, @Nullable List<String> types) {
         List<Festival> festivals = festivalMapper.getFestival(countries, year);
@@ -112,9 +136,16 @@ public class FestivalServiceImpl implements FestivalService {
             fitterByMonth(festivals, month);
         if(types != null)
             fitterByType(festivals, types);
+        festivals.sort(Comparator.comparing(Festival::getDate));
         return festivals;
     }
 
+    /**
+     * Creates a reminder for a festival.
+     *
+     * @param reminderRequest The RequestDO object containing the reminder request data.
+     * @return A ResponseDO object indicating the result of the reminder creation operation.
+     */
     @Override
     public ResponseDO createReminder(Reminder.RequestDO reminderRequest) {
         Festival festival = festivalMapper.getFestivalById(reminderRequest.getId());
@@ -150,26 +181,29 @@ public class FestivalServiceImpl implements FestivalService {
         return ResponseDO.success("We will send an email to you at " + reminderTime.format(formatterWithTime) + ".");
     }
 
+    /**
+     * Adds festivals to the database for the specified countries, year, and month.
+     *
+     * @param countries The list of countries for which festivals are to be added.
+     * @param year      The year for which festivals are to be added.
+     * @param month     The month for which festivals are to be added.
+     * @return A ResponseDO object indicating the result of the operation.
+     */
     @Override
-    public ResponseDO addFestivals(List<String> countries, int year) {
-        CountDownLatch countDownLatch = new CountDownLatch(countries.size());
-        for(String country: countries){
-            executorService.submit(() -> {
-                List<Festival> festivals = httpUtil.getFestivalByCountry(country, year, null);
-                festivals.sort(Comparator.comparing(Festival::getDate));
-                for(Festival festival: festivals)
-                    festivalMapper.addFestival(festival);
-                countDownLatch.countDown();
-            });
-        }
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseDO addFestivals(List<String> countries, int year, int month) {
+        List<Festival> festivals = getFestivals(countries, year, month, null);
+        festivals.sort(Comparator.comparing(Festival::getDate));
+        for(Festival festival: festivals)
+            festivalMapper.addFestival(festival);
         return ResponseDO.success("");
     }
 
+    /**
+     * Filters festivals by month.
+     *
+     * @param festivals The list of festivals to filter.
+     * @param month     The month to filter by.
+     */
     public void fitterByMonth(List<Festival> festivals, int month){
         Iterator<Festival> iterator = festivals.iterator();
         while(iterator.hasNext()){
@@ -180,12 +214,26 @@ public class FestivalServiceImpl implements FestivalService {
         }
     }
 
+    /**
+     * Filters festivals by type.
+     *
+     * @param festivals The list of festivals to filter.
+     * @param types     The list of types to filter by.
+     */
     public void fitterByType(List<Festival> festivals, List<String> types){
         Set<String> set = new HashSet<>(types);
         festivals.removeIf(festival -> !set.contains(festival.getType()));
     }
 
-    private void setCookie(String content,long time, HttpServletResponse response){
+    /**
+     * Sets a cookie with the provided content, expiration time, and domain in the HttpServletResponse.
+     *
+     * @param content  The content to be stored in the cookie.
+     * @param time     The expiration time for the cookie.
+     * @param response The HttpServletResponse object to which the cookie will be added.
+     * @param request  The HttpServletRequest object from which the server name will be obtained for setting the cookie domain.
+     */
+    private void setCookie(String content,long time, HttpServletResponse response, HttpServletRequest request){
         String encode;
         try {
             encode = Base64.getEncoder().encodeToString(content.getBytes(CHARSET));
@@ -193,17 +241,28 @@ public class FestivalServiceImpl implements FestivalService {
             throw new RuntimeException(e);
         }
         Cookie cookie = new Cookie(String.valueOf(time), encode);
-        cookie.setDomain(env.getProperty("OPENAI_cookie_domain"));
-        cookie.setMaxAge(24*60*60);
+        cookie.setDomain(request.getServerName());
+//        cookie.setMaxAge(24*60*60);
+        // MaxAge: default value is -1 - Session
         response.addCookie(cookie);
     }
 
+    /**
+     * Removes a cookie from the HttpServletResponse.
+     *
+     * @param cookie   The cookie to be removed.
+     * @param response The HttpServletResponse object from which the cookie will be removed.
+     */
     private void removeCookie(Cookie cookie, HttpServletResponse response){
         Cookie newCookie = new Cookie(cookie.getName(), null);
         newCookie.setMaxAge(0);
         response.addCookie(newCookie);
     }
 
+    /**
+     * Periodically checks and removes expired records from the traffic map.
+     * This method is scheduled to run with a fixed delay of 10 seconds.
+     */
     @Scheduled(fixedDelay = 1000L*10)
     public void checkExpiredRecord(){
         for(Map.Entry<String, ConcurrentLinkedDeque<Long> > e: trafficMap.entrySet()){
@@ -213,6 +272,12 @@ public class FestivalServiceImpl implements FestivalService {
         }
     }
 
+    /**
+     * Removes old timestamps from the given deque.
+     *
+     * @param timestamps The deque containing timestamps to be cleaned.
+     * @param current    The current time, used to determine whether a timestamp is old.
+     */
     private void cleanOldTimestamps(ConcurrentLinkedDeque<Long> timestamps, long current) {
         while (!timestamps.isEmpty() && current - timestamps.getFirst() >= 60 * 1000) {
             timestamps.removeFirst();

@@ -57,6 +57,14 @@ public class HttpUtil {
         return getRequest(url, TripAdvisor.class);
     }
 
+    /**
+     * Retrieves festivals for a specific country and year, optionally filtered by type.
+     *
+     * @param country The country for which festivals are to be retrieved.
+     * @param year    The year for which festivals are to be retrieved.
+     * @param type    The type of festivals to filter by. Pass null if no filtering by type is needed.
+     * @return A list of Festival objects representing the retrieved festivals.
+     */
     public List<Festival> getFestivalByCountry(String country, int year, @Nullable String type) {
         String url = "https://api.api-ninjas.com/v1/holidays?country=" + country + "&year=" + year;
         if(type != null)

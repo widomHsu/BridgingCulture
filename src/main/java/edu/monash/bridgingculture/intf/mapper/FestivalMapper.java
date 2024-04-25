@@ -11,7 +11,11 @@ import java.util.List;
 @Mapper
 public interface FestivalMapper {
 
-    @Insert("INSERT INTO festival_api (country, iso, year, date, day, name, type) " +
+//    @Insert("INSERT INTO festival_api (country, iso, year, date, day, name, type) " +
+//            "VALUES (#{country}, #{iso}, #{year}, #{date}, #{day}, #{name}, #{type});")
+//    int addFestival(Festival festival);
+
+    @Insert("INSERT INTO festival_fitter (country, iso, year, date, day, name, type) " +
             "VALUES (#{country}, #{iso}, #{year}, #{date}, #{day}, #{name}, #{type});")
     int addFestival(Festival festival);
 

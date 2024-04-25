@@ -28,6 +28,15 @@ public class FestivalsController {
     @Resource
     ReminderUtils reminderUtils;
 
+    /**
+     * Handles HTTP POST requests to "/chatBot".
+     * This method logs the incoming request and processes the chatBot query.
+     *
+     * @param request  The HTTPServletRequest object representing the incoming request.
+     * @param response The HttpServletResponse object representing the outgoing response.
+     * @param chatBot  The ChatBot object containing the query.
+     * @return A ResponseDO object containing the result of the chatBot processing.
+     */
     @PostMapping("/chatBot")
     @Log
     public ResponseDO chatBot(HttpServletRequest request, HttpServletResponse response, @RequestBody ChatBot chatBot){
@@ -39,6 +48,14 @@ public class FestivalsController {
         return ResponseDO.success(festivalService.chatBot(request, response, chatBot.getQuery()));
     }
 
+    /**
+     * Handles HTTP POST requests to the root ("/") endpoint.
+     * This method logs the incoming request and retrieves festival data based on the provided parameters.
+     *
+     * @param festivalDO The FestivalDO object containing the parameters for retrieving festival data.
+     * @return A ResponseDO object containing the retrieved festival data or an error message.
+     * @throws InterruptedException If the thread is interrupted while sleeping.
+     */
     @PostMapping("")
     @Log
     public ResponseDO getFestival(@RequestBody Festival.FestivalDO festivalDO) throws InterruptedException {
@@ -67,6 +84,13 @@ public class FestivalsController {
         );
     }
 
+    /**
+     * Handles HTTP POST requests to the "/reminder" endpoint.
+     * This method logs the incoming request and creates a reminder based on the provided data.
+     *
+     * @param reminderRequest The RequestDO object containing the reminder request data.
+     * @return A ResponseDO object containing the result of the reminder creation operation.
+     */
     @PostMapping("/reminder")
     @Log
     public ResponseDO createReminder(@RequestBody Reminder.RequestDO reminderRequest) {
@@ -78,10 +102,17 @@ public class FestivalsController {
     @PostMapping("/addFestivals")
     @Log
     public ResponseDO addFestivals(@RequestParam("country") List<String> countries,
-                                   @RequestParam("year") String year){
-        return festivalService.addFestivals(countries, Integer.parseInt(year));
+                                   @RequestParam("year") String year,
+                                   @RequestParam("month") String month){
+        return festivalService.addFestivals(countries, Integer.parseInt(year), Integer.parseInt(month));
     }
 
+    /**
+     * Checks the validity of the provided year string.
+     *
+     * @param yearStr The string representation of the year to be checked.
+     * @return A ResponseDO object indicating the result of the year validation.
+     */
     public static ResponseDO checkYear(String yearStr){
         if(StringUtils.isEmpty(yearStr))
             return ResponseDO.fail("The year is null.");
@@ -94,6 +125,12 @@ public class FestivalsController {
         return ResponseDO.success(year);
     }
 
+    /**
+     * Converts a string to an integer.
+     *
+     * @param str The string to be converted.
+     * @return The integer representation of the string, or -1 if conversion fails.
+     */
     public static int getNumber(String str){
         if(str == null)
             return -1;
