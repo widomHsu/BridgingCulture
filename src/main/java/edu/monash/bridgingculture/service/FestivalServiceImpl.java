@@ -4,6 +4,7 @@ import edu.monash.bridgingculture.controller.utils.ReminderUtils;
 import edu.monash.bridgingculture.intf.FestivalService;
 import edu.monash.bridgingculture.intf.mapper.FestivalMapper;
 import edu.monash.bridgingculture.service.entity.ResponseDO;
+import edu.monash.bridgingculture.service.entity.festival.ChatBotHistory;
 import edu.monash.bridgingculture.service.entity.festival.Festival;
 import edu.monash.bridgingculture.service.entity.festival.Reminder;
 import edu.monash.bridgingculture.service.utils.HttpUtil;
@@ -40,9 +41,9 @@ public class FestivalServiceImpl implements FestivalService {
     @Resource
     Environment env;
     @Resource
-    OpenAiChatClient chatClient;
-    @Resource
     HttpUtil httpUtil;
+    @Resource
+    OpenAiChatClient chatClient;
     @Resource
     JavaMailSender mailSender;
     @Resource
@@ -85,23 +86,56 @@ public class FestivalServiceImpl implements FestivalService {
      * @param query    The user's query.
      * @return The response from the chatbot.
      */
+//    @Override
+//    public String chatBot(HttpServletRequest request, HttpServletResponse response, String query) {
+//        Cookie[] cookies = request.getCookies();
+//        List<Message> messages = new ArrayList<>();
+//        if(cookies != null){
+//            int i = 1;
+//            for(Cookie cookie: cookies){
+//                if(cookie.getValue() != null){
+//                    String value = new String(Base64.getDecoder().decode(cookie.getValue()));
+//                    if(i % 2 == 1){
+//                        messages.add(new ChatMessage(MessageType.USER, value));
+//                    }else{
+//                        messages.add(new ChatMessage(MessageType.ASSISTANT, value));
+//                    }
+//                    log.info(i + " " + value);
+//                    i++;
+//                }
+//            }
+//        }
+//
+//        messages.add(new ChatMessage(MessageType.USER, query));
+//        messages.add(new ChatMessage(MessageType.SYSTEM, env.getProperty("OPENAI_system_content")));
+//        ChatResponse call = chatClient.call(new Prompt(messages));
+//        String res = call.getResult().getOutput().getContent();
+//
+//        if(cookies != null && cookies.length >= 10){
+//            removeCookie(cookies[0], response);
+//            removeCookie(cookies[1], response);
+//        }
+//        long currentTime = System.currentTimeMillis();
+//        setCookie(query, currentTime, response, request);
+//        setCookie(res,currentTime + 1, response, request);
+//        return res;
+//    }
+
     @Override
     public String chatBot(HttpServletRequest request, HttpServletResponse response, String query) {
-        Cookie[] cookies = request.getCookies();
+        String ip = request.getRemoteAddr();
+        List<ChatBotHistory> histories = festivalMapper.getHistory(ip);
         List<Message> messages = new ArrayList<>();
-        if(cookies != null){
-            int i = 1;
-            for(Cookie cookie: cookies){
-                if(cookie.getValue() != null){
-                    String value = new String(Base64.getDecoder().decode(cookie.getValue()));
-                    if(i % 2 == 1){
-                        messages.add(new ChatMessage(MessageType.USER, value));
-                    }else{
-                        messages.add(new ChatMessage(MessageType.ASSISTANT, value));
-                    }
-                    log.info(i + " " + value);
-                    i++;
+
+        if(histories != null){
+            Collections.reverse(histories);
+            for(ChatBotHistory history: histories){
+                if(history.getRole().equals(MessageType.USER.getValue())){
+                    messages.add(new ChatMessage(MessageType.USER, history.getContent()));
+                }else{
+                    messages.add(new ChatMessage(MessageType.ASSISTANT, history.getContent()));
                 }
+                log.info(MessageType.USER.getValue() + ": " + history.getContent());
             }
         }
 
@@ -109,14 +143,13 @@ public class FestivalServiceImpl implements FestivalService {
         messages.add(new ChatMessage(MessageType.SYSTEM, env.getProperty("OPENAI_system_content")));
         ChatResponse call = chatClient.call(new Prompt(messages));
         String res = call.getResult().getOutput().getContent();
+        if(!res.startsWith(env.getProperty("OPENAI_refuse_flag")))
+            executorService.submit(() ->{
+                long currentTime = System.currentTimeMillis();
+                festivalMapper.addHistory(new ChatBotHistory(ip, MessageType.USER.getValue(), query, currentTime));
+                festivalMapper.addHistory(new ChatBotHistory(ip, MessageType.ASSISTANT.getValue(), res, currentTime+1));
+            });
 
-        if(cookies != null && cookies.length >= 10){
-            removeCookie(cookies[0], response);
-            removeCookie(cookies[1], response);
-        }
-        long currentTime = System.currentTimeMillis();
-        setCookie(query, currentTime, response, request);
-        setCookie(res,currentTime + 1, response, request);
         return res;
     }
 
@@ -132,6 +165,7 @@ public class FestivalServiceImpl implements FestivalService {
     @Override
     public List<Festival> getFestivals(List<String> countries, int year, int month, @Nullable List<String> types) {
         List<Festival> festivals = festivalMapper.getFestival(countries, year);
+//        List<Festival> festivals = httpUtil.getFestivalByCountry(countries.get(0), year, null);
         if(month != -1)
             fitterByMonth(festivals, month);
         if(types != null)
@@ -265,11 +299,12 @@ public class FestivalServiceImpl implements FestivalService {
      */
     @Scheduled(fixedDelay = 1000L*10)
     public void checkExpiredRecord(){
+        long current = System.currentTimeMillis();
         for(Map.Entry<String, ConcurrentLinkedDeque<Long> > e: trafficMap.entrySet()){
             ConcurrentLinkedDeque<Long> timestamps = e.getValue();
-            long current = System.currentTimeMillis();
             cleanOldTimestamps(timestamps, current);
         }
+        festivalMapper.removeHistory(current - 24*60*60*1000);
     }
 
     /**
