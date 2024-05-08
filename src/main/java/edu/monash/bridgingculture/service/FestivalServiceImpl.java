@@ -34,6 +34,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static edu.monash.bridgingculture.service.utils.ThreadPoolUtils.executorService;
+
 @Service
 @Slf4j
 public class FestivalServiceImpl implements FestivalService {
@@ -54,7 +56,6 @@ public class FestivalServiceImpl implements FestivalService {
     ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> trafficMap = new ConcurrentHashMap<>();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     DateTimeFormatter formatterWithTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     /**
      * Checks whether the user with the provided IP address is allowed to make a request.

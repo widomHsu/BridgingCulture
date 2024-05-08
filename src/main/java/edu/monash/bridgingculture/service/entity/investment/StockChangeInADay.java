@@ -3,7 +3,7 @@ package edu.monash.bridgingculture.service.entity.investment;
 import lombok.Data;
 
 @Data
-public class StockChange {
+public class StockChangeInADay {
 
     String name;
     String symbol;

@@ -2,15 +2,14 @@ package edu.monash.bridgingculture.service.utils;
 
 import com.google.gson.Gson;
 import edu.monash.bridgingculture.service.entity.festival.Festival;
-import edu.monash.bridgingculture.service.entity.investment.MarketDTO;
-import edu.monash.bridgingculture.service.entity.investment.StockDTO;
-import edu.monash.bridgingculture.service.entity.investment.TopStockDTO;
+import edu.monash.bridgingculture.service.entity.investment.*;
 import edu.monash.bridgingculture.service.entity.quiz.GeoLocation;
 import edu.monash.bridgingculture.service.entity.quiz.TripAdvisor;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +22,7 @@ import java.util.List;
  */
 @Component
 @Slf4j
+@Order(2)
 public class HttpUtil {
     @Resource
     OkHttpClient client;
@@ -30,6 +30,8 @@ public class HttpUtil {
     Gson gson;
     @Resource
     Environment env;
+    @Resource
+    APIUtils apiUtils;
 
     /**
      * Retrieves information from TripAdvisor based on suburb and country.
@@ -79,44 +81,24 @@ public class HttpUtil {
         return festivals;
     }
 
-    public MarketDTO getMarket(String interval, String range){
-        Request request = new Request.Builder()
-                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/market/get-spark" +
-                        "?symbols=%5EAXJO" +
-                        "&interval=" + interval +
-                        "&range=1d" + range)
-                .get()
-                .addHeader("X-RapidAPI-Key", env.getProperty("X-RapidAPI-Key"))
-                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
-                .build();
-        return getRequest(request, MarketDTO.class);
+    public YahooMarketDTO getMarketTimeSerial(String interval, String range){
+        String url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EAXJO" +
+                "?interval=" + interval +
+                "&range=" + range;
+        return getRequest(url, YahooMarketDTO.class);
     }
 
-    public StockDTO getStock(String symbol, String interval, String range){
-        Request request = new Request.Builder()
-                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-chart" +
-                        "?interval=" + interval +
-                        "&symbol=" + symbol +
-                        "&range=" + range +
-                        "&region=AU")
-                .get()
-                .addHeader("X-RapidAPI-Key", env.getProperty("X-RapidAPI-Key"))
-                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
-                .build();
-        return getRequest(request, StockDTO.class);
+    public YahooStockDTO getStockTimeSerial(String symbol, String interval, String range){
+        String url = "https://query1.finance.yahoo.com/v8/finance/chart" +
+                "/" + symbol +
+                "?interval=" + interval +
+                "&range=" + range;
+        return getRequest(url, YahooStockDTO.class);
     }
 
-    public TopStockDTO getTopStock(int top){
+    public TopStockDTO getTopStockByDay(int top){
         MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(mediaType, "[\n" +
-                "    {\n" +
-                "        \"operator\": \"eq\",\n" +
-                "        \"operands\": [\n" +
-                "            \"region\",\n" +
-                "            \"au\"\n" +
-                "        ]\n" +
-                "    }\n" +
-                "]");
+        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
         Request request = new Request.Builder()
                 .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
                         "?quoteType=EQUITY" +
@@ -127,7 +109,26 @@ public class HttpUtil {
                         "&sortType=DESC")
                 .post(body)
                 .addHeader("content-type", "application/json")
-                .addHeader("X-RapidAPI-Key", env.getProperty("X-RapidAPI-Key"))
+                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
+                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
+                .build();
+        return getRequest(request, TopStockDTO.class);
+    }
+
+    public TopStockDTO getTopStockByYear(int top){
+        MediaType mediaType = MediaType.parse("application/json");
+        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
+        Request request = new Request.Builder()
+                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
+                        "?quoteType=EQUITY" +
+                        "&sortField=fiftytwowkpercentchange" +
+                        "&region=AU" +
+                        "&size=" + top +
+                        "&offset=0" +
+                        "&sortType=DESC")
+                .post(body)
+                .addHeader("content-type", "application/json")
+                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
                 .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
                 .build();
         return getRequest(request, TopStockDTO.class);

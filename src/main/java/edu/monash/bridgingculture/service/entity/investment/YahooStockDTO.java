@@ -8,7 +8,7 @@ import java.util.List;
 
 @NoArgsConstructor
 @Data
-public class StockDTO {
+public class YahooStockDTO {
 
     @SerializedName("chart")
     private ChartDTO chart;
@@ -79,7 +79,7 @@ public class StockDTO {
                 @SerializedName("currentTradingPeriod")
                 private CurrentTradingPeriodDTO currentTradingPeriod;
                 @SerializedName("tradingPeriods")
-                private TradingPeriodsDTO tradingPeriods;
+                private List<List<TradingPeriodsDTO>> tradingPeriods;
                 @SerializedName("dataGranularity")
                 private String dataGranularity;
                 @SerializedName("range")
@@ -140,51 +140,14 @@ public class StockDTO {
                 @NoArgsConstructor
                 @Data
                 public static class TradingPeriodsDTO {
-                    @SerializedName("pre")
-                    private List<List<PreDTO>> pre;
-                    @SerializedName("post")
-                    private List<List<PostDTO>> post;
-                    @SerializedName("regular")
-                    private List<List<RegularDTO>> regular;
-
-                    @NoArgsConstructor
-                    @Data
-                    public static class PreDTO {
-                        @SerializedName("timezone")
-                        private String timezone;
-                        @SerializedName("start")
-                        private Integer start;
-                        @SerializedName("end")
-                        private Integer end;
-                        @SerializedName("gmtoffset")
-                        private Integer gmtoffset;
-                    }
-
-                    @NoArgsConstructor
-                    @Data
-                    public static class PostDTO {
-                        @SerializedName("timezone")
-                        private String timezone;
-                        @SerializedName("start")
-                        private Integer start;
-                        @SerializedName("end")
-                        private Integer end;
-                        @SerializedName("gmtoffset")
-                        private Integer gmtoffset;
-                    }
-
-                    @NoArgsConstructor
-                    @Data
-                    public static class RegularDTO {
-                        @SerializedName("timezone")
-                        private String timezone;
-                        @SerializedName("start")
-                        private Integer start;
-                        @SerializedName("end")
-                        private Integer end;
-                        @SerializedName("gmtoffset")
-                        private Integer gmtoffset;
-                    }
+                    @SerializedName("timezone")
+                    private String timezone;
+                    @SerializedName("start")
+                    private Integer start;
+                    @SerializedName("end")
+                    private Integer end;
+                    @SerializedName("gmtoffset")
+                    private Integer gmtoffset;
                 }
             }
 
