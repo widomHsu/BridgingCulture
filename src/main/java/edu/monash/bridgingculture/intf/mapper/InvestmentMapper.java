@@ -1,6 +1,5 @@
 package edu.monash.bridgingculture.intf.mapper;
 
-import edu.monash.bridgingculture.service.entity.investment.StockChangeInADay;
 import edu.monash.bridgingculture.service.entity.investment.StockChangeInAYear;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;

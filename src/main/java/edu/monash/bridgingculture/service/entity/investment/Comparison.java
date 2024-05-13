@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class Comparison {
     Integer timestamp;
-    Double stockPrice;
-    Double marketPrice;
+    String stockPrice;
+    String marketPrice;
 }

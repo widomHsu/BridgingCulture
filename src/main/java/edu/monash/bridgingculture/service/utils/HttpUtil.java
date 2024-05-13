@@ -30,8 +30,8 @@ public class HttpUtil {
     Gson gson;
     @Resource
     Environment env;
-    @Resource
-    APIUtils apiUtils;
+//    @Resource
+//    APIUtils apiUtils;
 
     /**
      * Retrieves information from TripAdvisor based on suburb and country.
@@ -96,42 +96,66 @@ public class HttpUtil {
         return getRequest(url, YahooStockDTO.class);
     }
 
-    public TopStockDTO getTopStockByDay(int top){
+//    public TopStockDTO getTopStockByDay(int top){
+//        MediaType mediaType = MediaType.parse("application/json");
+//        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
+//        Request request = new Request.Builder()
+//                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
+//                        "?quoteType=EQUITY" +
+//                        "&sortField=percentchange" +
+//                        "&region=AU" +
+//                        "&size=" + top +
+//                        "&offset=0" +
+//                        "&sortType=DESC")
+//                .post(body)
+//                .addHeader("content-type", "application/json")
+//                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
+//                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
+//                .build();
+//        return getRequest(request, TopStockDTO.class);
+//    }
+
+    public YahooScreenerDTO getTopStockByDay(){
         MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
+        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStockByDay"));
         Request request = new Request.Builder()
-                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
-                        "?quoteType=EQUITY" +
-                        "&sortField=percentchange" +
-                        "&region=AU" +
-                        "&size=" + top +
-                        "&offset=0" +
-                        "&sortType=DESC")
+                .url("https://query2.finance.yahoo.com/v1/finance/screener?crumb=ez%2FFFFwzw3T&lang=en-US&region=au")
                 .post(body)
                 .addHeader("content-type", "application/json")
-                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
-                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
+                .addHeader("cookie", env.getProperty("TopStockCookie"))
                 .build();
-        return getRequest(request, TopStockDTO.class);
+        return getRequest(request, YahooScreenerDTO.class);
     }
 
-    public TopStockDTO getTopStockByYear(int top){
+//    public TopStockYearDTO getTopStockByYear(int top){
+//        MediaType mediaType = MediaType.parse("application/json");
+//        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
+//        Request request = new Request.Builder()
+//                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
+//                        "?quoteType=EQUITY" +
+//                        "&sortField=fiftytwowkpercentchange" +
+//                        "&region=AU" +
+//                        "&size=" + top +
+//                        "&offset=0" +
+//                        "&sortType=DESC")
+//                .post(body)
+//                .addHeader("content-type", "application/json")
+//                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
+//                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
+//                .build();
+//        return getRequest(request, TopStockYearDTO.class);
+//    }
+
+    public YahooScreenerDTO getTopStockByYear(){
         MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStock"));
+        RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStockByYear"));
         Request request = new Request.Builder()
-                .url("https://apidojo-yahoo-finance-v1.p.rapidapi.com/screeners/list" +
-                        "?quoteType=EQUITY" +
-                        "&sortField=fiftytwowkpercentchange" +
-                        "&region=AU" +
-                        "&size=" + top +
-                        "&offset=0" +
-                        "&sortType=DESC")
+                .url("https://query2.finance.yahoo.com/v1/finance/screener?crumb=ez%2FFFFwzw3T&lang=en-US&region=au")
                 .post(body)
                 .addHeader("content-type", "application/json")
-                .addHeader("X-RapidAPI-Key", apiUtils.getXRapidAPIKey())
-                .addHeader("X-RapidAPI-Host", "apidojo-yahoo-finance-v1.p.rapidapi.com")
+                .addHeader("cookie", env.getProperty("TopStockCookie"))
                 .build();
-        return getRequest(request, TopStockDTO.class);
+        return getRequest(request, YahooScreenerDTO.class);
     }
 
     /**

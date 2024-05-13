@@ -28,7 +28,8 @@ public class InvestmentServiceImpl implements InvestmentService {
     HttpUtil httpUtil;
     @Resource
     InvestmentMapper investmentMapper;
-    DecimalFormat df = new DecimalFormat("0.00%");
+    DecimalFormat percentFormatter = new DecimalFormat("0.00%");
+    DecimalFormat radixFormatter = new DecimalFormat("0.0000");
 
     @Override
     public ResponseDO getStockAndMarket(String symbol, String interval, String range) {
@@ -54,10 +55,10 @@ public class InvestmentServiceImpl implements InvestmentService {
         List<Double> close = stockResultDTO.getIndicators().getQuote().get(0).getClose();
         int size = stockResultDTO.getTimestamp().size();
 
-        Map<Integer, Double> map = new HashMap<>(size);
-        log.info("Stock size: " + stockTimeStamp.size());
+        Map<Integer, String> map = new HashMap<>(size);
+        log.info(symbol + " size: " + stockTimeStamp.size());
         for(int i = 0; i < stockTimeStamp.size(); i++){
-            map.put(stockTimeStamp.get(i), close.get(i));
+            map.put(stockTimeStamp.get(i), close.get(i) != null?radixFormatter.format(close.get(i)) : null);
         }
 
         List<Comparison> comparisons = new ArrayList<>(timestamp.size());
@@ -67,7 +68,8 @@ public class InvestmentServiceImpl implements InvestmentService {
             Integer t = timestamp.get(i);
             comparison.setTimestamp(t);
             comparison.setStockPrice(map.get(t));
-            comparison.setMarketPrice(marketResultDTO.getIndicators().getQuote().get(0).getClose().get(i));
+            Double marketPrice = marketResultDTO.getIndicators().getQuote().get(0).getClose().get(i);
+            comparison.setMarketPrice(marketPrice != null? radixFormatter.format(marketPrice) : null);
             comparisons.add(comparison);
         }
         return ResponseDO.success(comparisons);
@@ -86,24 +88,35 @@ public class InvestmentServiceImpl implements InvestmentService {
         MarketSummary marketSummary = new MarketSummary();
         marketSummary.setRegularMarketPrice(String.valueOf(price));
         marketSummary.setRegularMarketChange(subtract.toString());
-        marketSummary.setRegularMarketChangePercent(df.format(divide));
+        marketSummary.setRegularMarketChangePercent(percentFormatter.format(divide));
         return marketSummary;
     }
 
     @Override
     public List<StockChangeInADay> getTopStockByDay(int top) {
-        TopStockDTO topStockDTO = httpUtil.getTopStockByDay(top);
-        List<TopStockDTO.FinanceDTO.ResultDTO.QuotesDTO> quotes = topStockDTO.getFinance().getResult().get(0).getQuotes();
+        YahooScreenerDTO stockByDay = httpUtil.getTopStockByDay();
+        List<YahooScreenerDTO.FinanceDTO.ResultDTO.QuotesDTO> quotes = stockByDay.getFinance().getResult().get(0).getQuotes();
         List<StockChangeInADay> res = new ArrayList<>();
-        for(TopStockDTO.FinanceDTO.ResultDTO.QuotesDTO quote: quotes){
+        for(YahooScreenerDTO.FinanceDTO.ResultDTO.QuotesDTO quote: quotes){
             StockChangeInADay stockChangeInADay = new StockChangeInADay();
-            stockChangeInADay.setName(quote.getLongName());
+            stockChangeInADay.setName(quote.getLongName() != null? quote.getLongName() : quote.getShortName());
             stockChangeInADay.setSymbol(quote.getSymbol());
-            stockChangeInADay.setPricePreviousClose(quote.getRegularMarketPreviousClose().getFmt());
-            stockChangeInADay.setPriceNow(quote.getRegularMarketPrice().getFmt());
-            stockChangeInADay.setPriceChange(quote.getRegularMarketChange().getFmt());
-            stockChangeInADay.setChangePercent(quote.getRegularMarketChangePercent().getFmt());
+
+            BigDecimal previousPrice = BigDecimal.valueOf(quote.getRegularMarketPreviousClose());
+            stockChangeInADay.setPricePreviousClose(radixFormatter.format(previousPrice));
+
+            BigDecimal marketPrice = BigDecimal.valueOf(quote.getRegularMarketPrice());
+            stockChangeInADay.setPriceNow(radixFormatter.format(marketPrice));
+
+            BigDecimal priceChange = BigDecimal.valueOf(quote.getRegularMarketChange());
+            stockChangeInADay.setPriceChange(radixFormatter.format(priceChange));
+
+            BigDecimal changePercent = BigDecimal.valueOf(quote.getRegularMarketChangePercent() / 100);
+            stockChangeInADay.setChangePercent(percentFormatter.format(changePercent));
+
             res.add(stockChangeInADay);
+            if(res.size() == top)
+                break;
         }
         return res;
     }
@@ -116,24 +129,26 @@ public class InvestmentServiceImpl implements InvestmentService {
     @Override
     @Scheduled(cron = "0 0 0 * * *")
     public void updateTopStockByYear() {
-        TopStockDTO topStockDTO = httpUtil.getTopStockByYear(50);
-        List<TopStockDTO.FinanceDTO.ResultDTO.QuotesDTO> quotes = topStockDTO.getFinance().getResult().get(0).getQuotes();
+        YahooScreenerDTO stockByYear = httpUtil.getTopStockByYear();
+        List<YahooScreenerDTO.FinanceDTO.ResultDTO.QuotesDTO> quotes = stockByYear.getFinance().getResult().get(0).getQuotes();
         List<StockChangeInAYear> res = new ArrayList<>();
 
-        for(TopStockDTO.FinanceDTO.ResultDTO.QuotesDTO quote: quotes){
+        for(YahooScreenerDTO.FinanceDTO.ResultDTO.QuotesDTO quote: quotes){
             StockChangeInAYear stockChange = new StockChangeInAYear();
-            stockChange.setName(quote.getLongName());
+            stockChange.setName(quote.getLongName() != null? quote.getLongName() : quote.getShortName());
             stockChange.setSymbol(quote.getSymbol());
-            stockChange.setPriceLowest(quote.getFiftyTwoWeekLow().getFmt());
-            stockChange.setPriceHighest(quote.getFiftyTwoWeekHigh().getFmt());
 
-            BigDecimal highest = BigDecimal.valueOf(quote.getFiftyTwoWeekHigh().getRaw());
-            BigDecimal lowest = BigDecimal.valueOf(quote.getFiftyTwoWeekLow().getRaw());
+            BigDecimal highest = BigDecimal.valueOf(quote.getFiftyTwoWeekHigh());
+            BigDecimal lowest = BigDecimal.valueOf(quote.getFiftyTwoWeekLow());
+
+            stockChange.setPriceLowest(radixFormatter.format(lowest));
+            stockChange.setPriceHighest(radixFormatter.format(highest));
+
             BigDecimal subtract = highest.subtract(lowest);
             BigDecimal divide = subtract.divide(lowest, 4, BigDecimal.ROUND_HALF_UP);
 
-            stockChange.setPriceChange(String.valueOf(subtract));
-            stockChange.setChangePercent(df.format(divide));
+            stockChange.setPriceChange(radixFormatter.format(subtract));
+            stockChange.setChangePercent(percentFormatter.format(divide));
             res.add(stockChange);
         }
         int truncateNo = investmentMapper.truncateTopStock();
