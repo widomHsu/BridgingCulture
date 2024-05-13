@@ -14,6 +14,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Utility class for investment-related operations, including validating intervals and ranges.
+ * Implements ApplicationRunner to perform initialization tasks on application startup.
+ */
 @Component
 @Slf4j
 public class InvestmentUtils implements ApplicationRunner {
@@ -27,6 +31,11 @@ public class InvestmentUtils implements ApplicationRunner {
     Set<String> rangeSet;
     Set<String> intervalSet;
 
+    /**
+     * Initializes ranges and intervals sets and triggers an update if necessary on application startup.
+     *
+     * @param args Application arguments.
+     */
     @Override
     public void run(ApplicationArguments args) {
         List<String> range = Arrays.asList(env.getProperty("YahooFinance_range").split(","));
@@ -39,9 +48,22 @@ public class InvestmentUtils implements ApplicationRunner {
             log.info("Today's data has been updated");
     }
 
+    /**
+     * Checks if the provided interval is valid.
+     *
+     * @param interval Interval to validate.
+     * @return True if the interval is valid, false otherwise.
+     */
     public boolean isValidInterval(String interval){
         return intervalSet.contains(interval);
     }
+
+    /**
+     * Checks if the provided range is valid.
+     *
+     * @param range Range to validate.
+     * @return True if the range is valid, false otherwise.
+     */
     public boolean isValidRange(String range){
         return rangeSet.contains(range);
     }

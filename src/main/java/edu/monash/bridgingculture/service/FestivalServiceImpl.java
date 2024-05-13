@@ -87,41 +87,6 @@ public class FestivalServiceImpl implements FestivalService {
      * @param query    The user's query.
      * @return The response from the chatbot.
      */
-//    @Override
-//    public String chatBot(HttpServletRequest request, HttpServletResponse response, String query) {
-//        Cookie[] cookies = request.getCookies();
-//        List<Message> messages = new ArrayList<>();
-//        if(cookies != null){
-//            int i = 1;
-//            for(Cookie cookie: cookies){
-//                if(cookie.getValue() != null){
-//                    String value = new String(Base64.getDecoder().decode(cookie.getValue()));
-//                    if(i % 2 == 1){
-//                        messages.add(new ChatMessage(MessageType.USER, value));
-//                    }else{
-//                        messages.add(new ChatMessage(MessageType.ASSISTANT, value));
-//                    }
-//                    log.info(i + " " + value);
-//                    i++;
-//                }
-//            }
-//        }
-//
-//        messages.add(new ChatMessage(MessageType.USER, query));
-//        messages.add(new ChatMessage(MessageType.SYSTEM, env.getProperty("OPENAI_system_content")));
-//        ChatResponse call = chatClient.call(new Prompt(messages));
-//        String res = call.getResult().getOutput().getContent();
-//
-//        if(cookies != null && cookies.length >= 10){
-//            removeCookie(cookies[0], response);
-//            removeCookie(cookies[1], response);
-//        }
-//        long currentTime = System.currentTimeMillis();
-//        setCookie(query, currentTime, response, request);
-//        setCookie(res,currentTime + 1, response, request);
-//        return res;
-//    }
-
     @Override
     public String chatBot(HttpServletRequest request, HttpServletResponse response, String query) {
         String ip = request.getRemoteAddr();

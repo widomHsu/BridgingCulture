@@ -15,6 +15,11 @@ public class JobController {
     @Resource
     JobUtils jobUtils;
 
+    /**
+     * Retrieves job-related data.
+     *
+     * @return Response containing job-related statistics.
+     */
     @GetMapping("/market")
     @Log
     public ResponseDO getJob(){

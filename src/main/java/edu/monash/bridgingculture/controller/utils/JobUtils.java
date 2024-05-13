@@ -8,6 +8,10 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+/**
+ * Utility class for job-related operations.
+ * Implements ApplicationRunner to fetch job data during application startup.
+ */
 @Component
 @Getter
 public class JobUtils implements ApplicationRunner {
@@ -16,6 +20,11 @@ public class JobUtils implements ApplicationRunner {
     JobService jobService;
     Job job;
 
+    /**
+     * Fetches job-related data from JobService during application startup.
+     *
+     * @param args Application arguments.
+     */
     @Override
     public void run(ApplicationArguments args) {
         job = jobService.getJob();

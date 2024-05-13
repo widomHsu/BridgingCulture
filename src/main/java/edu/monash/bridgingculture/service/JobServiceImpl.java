@@ -17,6 +17,12 @@ public class JobServiceImpl implements JobService {
     @Resource
     JobMapper jobMapper;
 
+    /**
+     * Retrieves job-related data.
+     *
+     * @return Job containing various job-related statistics.
+     * @throws RuntimeException if an error occurs while fetching job data.
+     */
     @Override
     public Job getJob() {
         Job job = new Job();

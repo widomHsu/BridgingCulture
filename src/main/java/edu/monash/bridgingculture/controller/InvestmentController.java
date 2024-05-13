@@ -20,18 +20,38 @@ public class InvestmentController {
     @Resource
     InvestmentUtils investmentUtils;
 
+    /**
+     * Retrieves top stock by day.
+     *
+     * @param top Number of top stocks to retrieve.
+     * @return Response containing the top stocks for the day.
+     */
     @GetMapping("/stock/day")
     @Log
     public ResponseDO getTopStockByDay(@RequestParam("top") String top){
         return ResponseDO.success(investmentService.getTopStockByDay(Integer.parseInt(top)));
     }
 
+    /**
+     * Retrieves top stock by year.
+     *
+     * @param top Number of top stocks to retrieve.
+     * @return Response containing the top stocks for the year.
+     */
     @GetMapping("/stock/year")
     @Log
     public ResponseDO getTopStockByYear(@RequestParam("top") String top){
         return ResponseDO.success(investmentService.getTopStockByYear(Integer.parseInt(top)));
     }
 
+    /**
+     * Retrieves stock and market data.
+     *
+     * @param symbol   Symbol of the stock.
+     * @param interval Interval for data retrieval.
+     * @param range    Range for data retrieval.
+     * @return Response containing stock and market data.
+     */
     @GetMapping("/stockAndMarket")
     @Log
     public ResponseDO getStockAndMarket(@RequestParam("symbol") String symbol,
@@ -47,6 +67,11 @@ public class InvestmentController {
         return investmentService.getStockAndMarket(symbol, interval, range);
     }
 
+    /**
+     * Retrieves market price.
+     *
+     * @return Response containing the market price.
+     */
     @GetMapping("/market")
     public ResponseDO getMarket(){
         return ResponseDO.success(investmentService.getMarketPrice());

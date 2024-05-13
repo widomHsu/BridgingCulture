@@ -81,6 +81,13 @@ public class HttpUtil {
         return festivals;
     }
 
+    /**
+     * Retrieves market time series data from Yahoo Finance API.
+     *
+     * @param interval Interval for data retrieval.
+     * @param range    Range for data retrieval.
+     * @return YahooMarketDTO containing market time series data.
+     */
     public YahooMarketDTO getMarketTimeSerial(String interval, String range){
         String url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EAXJO" +
                 "?interval=" + interval +
@@ -88,6 +95,14 @@ public class HttpUtil {
         return getRequest(url, YahooMarketDTO.class);
     }
 
+    /**
+     * Retrieves stock time series data from Yahoo Finance API.
+     *
+     * @param symbol   Symbol of the stock.
+     * @param interval Interval for data retrieval.
+     * @param range    Range for data retrieval.
+     * @return YahooStockDTO containing stock time series data.
+     */
     public YahooStockDTO getStockTimeSerial(String symbol, String interval, String range){
         String url = "https://query1.finance.yahoo.com/v8/finance/chart" +
                 "/" + symbol +
@@ -115,6 +130,11 @@ public class HttpUtil {
 //        return getRequest(request, TopStockDTO.class);
 //    }
 
+    /**
+     * Retrieves top stocks by day using Yahoo Finance API.
+     *
+     * @return YahooScreenerDTO containing top stock data.
+     */
     public YahooScreenerDTO getTopStockByDay(){
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStockByDay"));
@@ -146,6 +166,11 @@ public class HttpUtil {
 //        return getRequest(request, TopStockYearDTO.class);
 //    }
 
+    /**
+     * Retrieves top stocks by year using Yahoo Finance API.
+     *
+     * @return YahooScreenerDTO containing top stock data.
+     */
     public YahooScreenerDTO getTopStockByYear(){
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, env.getProperty("TopStockByYear"));

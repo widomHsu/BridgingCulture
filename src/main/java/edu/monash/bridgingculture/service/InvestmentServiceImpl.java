@@ -31,6 +31,15 @@ public class InvestmentServiceImpl implements InvestmentService {
     DecimalFormat percentFormatter = new DecimalFormat("0.00%");
     DecimalFormat radixFormatter = new DecimalFormat("0.0000");
 
+    /**
+     * Retrieves stock and market data for a given symbol, interval, and range.
+     *
+     * @param symbol   Symbol of the stock.
+     * @param interval Interval for data retrieval.
+     * @param range    Range for data retrieval.
+     * @return Response containing stock and market data.
+     * @throws RuntimeException if an error occurs while retrieving data.
+     */
     @Override
     public ResponseDO getStockAndMarket(String symbol, String interval, String range) {
         Future<YahooMarketDTO> submit1 = executorService.submit(() -> httpUtil.getMarketTimeSerial(interval, range));
@@ -75,6 +84,11 @@ public class InvestmentServiceImpl implements InvestmentService {
         return ResponseDO.success(comparisons);
     }
 
+    /**
+     * Retrieves the market summary including current price, change, and percentage change.
+     *
+     * @return MarketSummary containing market price details.
+     */
     @Override
     public MarketSummary getMarketPrice() {
         YahooMarketDTO marketTimeSerial = httpUtil.getMarketTimeSerial("1m", "1d");
@@ -92,6 +106,12 @@ public class InvestmentServiceImpl implements InvestmentService {
         return marketSummary;
     }
 
+    /**
+     * Retrieves the top stocks based on their performance for the day.
+     *
+     * @param top Number of top stocks to retrieve.
+     * @return List of StockChangeInADay containing details of top stocks.
+     */
     @Override
     public List<StockChangeInADay> getTopStockByDay(int top) {
         YahooScreenerDTO stockByDay = httpUtil.getTopStockByDay();
@@ -121,11 +141,21 @@ public class InvestmentServiceImpl implements InvestmentService {
         return res;
     }
 
+    /**
+     * Retrieves the top stocks based on their performance for the year.
+     *
+     * @param top Number of top stocks to retrieve.
+     * @return List of StockChangeInAYear containing details of top stocks.
+     */
     @Override
     public List<StockChangeInAYear> getTopStockByYear(int top) {
         return investmentMapper.getTopStock(top);
     }
 
+    /**
+     * Updates the top stocks based on their performance for the year.
+     * This method is scheduled to run daily at midnight.
+     */
     @Override
     @Scheduled(cron = "0 0 0 * * *")
     public void updateTopStockByYear() {
